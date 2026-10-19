@@ -32,6 +32,16 @@ async function search(
   return data.results ?? [];
 }
 
+/** The same page often comes back as both "www.uscis.gov/x/" and "uscis.gov/x"; treat those as one. */
+function pageKey(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace(/^www\./, "") + u.pathname.replace(/\/+$/, "") + u.search;
+  } catch {
+    return url;
+  }
+}
+
 /** Runs every query in parallel, removes duplicate pages, and keeps the best matches. */
 export async function searchOfficialSources(
   queries: string[],
@@ -45,8 +55,9 @@ export async function searchOfficialSources(
 
   const byUrl = new Map<string, TavilyResult>();
   for (const result of batches.flat()) {
-    const existing = byUrl.get(result.url);
-    if (!existing || result.score > existing.score) byUrl.set(result.url, result);
+    const key = pageKey(result.url);
+    const existing = byUrl.get(key);
+    if (!existing || result.score > existing.score) byUrl.set(key, result);
   }
 
   return [...byUrl.values()]
