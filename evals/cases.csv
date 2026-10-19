@@ -1,0 +1,11 @@
+﻿id,question,expected,source,notes
+1,Work 25 hours a week as a paid TA during the fall semester,not_allowed,,On-campus work is capped at 20 hours/week while school is in session
+2,Freelance web development for a client in China while I'm living in Illinois,not_allowed,,Where the work is done matters; the client's country does not
+3,Paid summer internship at a tech company off campus,needs_authorization,,Usually CPT
+4,Invest my own savings in U.S. stocks and ETFs,allowed,,Passive investment is not employment
+5,Accept a cash prize for winning an online hackathon,unclear,,Ask the DSO
+6,Work full time at the campus dining hall during winter break,allowed,,Full-time on-campus work is allowed during official school breaks
+7,Work for a U.S. startup in a job related to my major after my OPT EAD card is approved,allowed,,Must be related to the major
+8,Sell my used textbooks and furniture before moving out,allowed,,Selling personal belongings is not employment
+9,Drive for Uber on weekends,not_allowed,,Off-campus work without authorization
+10,我想在学校图书馆打工，每周 15 小时,allowed,,Chinese question; on campus and under 20 hours

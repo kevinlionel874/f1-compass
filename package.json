@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "models": "node --env-file-if-exists=.env.local scripts/list-models.mjs"
+    "models": "node --env-file-if-exists=.env.local scripts/list-models.mjs",
+    "eval": "node scripts/eval.mjs"
   },
   "dependencies": {
     "next": "16.4.2",
