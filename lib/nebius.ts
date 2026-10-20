@@ -14,29 +14,36 @@ export async function chatJson(
     baseURL: config.nebiusBaseUrl,
   });
 
-  const completion = await client.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-    temperature: 0.2,
-    max_tokens: maxTokens,
-  });
-
-  const text = completion.choices[0]?.message?.content ?? "";
-  return extractJson(text, model);
+  // Temperature 0 keeps the verdict for the same question stable from run to run.
+  // Models occasionally emit malformed JSON; the retry adds a little randomness
+  // so it doesn't repeat the same mistake.
+  for (const temperature of [0, 0.3]) {
+    const completion = await client.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      temperature,
+      max_tokens: maxTokens,
+    });
+    const json = extractJson(completion.choices[0]?.message?.content ?? "");
+    if (json !== undefined) return json;
+  }
+  throw new Error(`${model} returned an answer we couldn't read. Please try again.`);
 }
 
 /** Reasoning models may wrap JSON in <think> blocks or code fences; pull out the object itself. */
-function extractJson(text: string, model: string): unknown {
+function extractJson(text: string): unknown {
   const cleaned = text
     .replace(/<think>[\s\S]*?<\/think>/gi, "")
     .replace(/```(?:json)?/gi, "");
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
-  if (start === -1 || end <= start) {
-    throw new Error(`${model} did not return JSON. Try again or switch models.`);
+  if (start === -1 || end <= start) return undefined;
+  try {
+    return JSON.parse(cleaned.slice(start, end + 1));
+  } catch {
+    return undefined;
   }
-  return JSON.parse(cleaned.slice(start, end + 1));
 }

@@ -14,7 +14,7 @@ import {
 
 /**
  * The whole check, in three steps:
- * 1. a fast Nemotron model restates the question and writes search queries,
+ * 1. Nemotron 3 Nano (fast) restates the question and writes search queries,
  * 2. Tavily searches official government sources only,
  * 3. a reasoning Nemotron model reads the sources and writes a cited assessment.
  */

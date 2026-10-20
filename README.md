@@ -18,7 +18,7 @@ More than a million international students study in the U.S. on F-1 visas. Unaut
 Student question
    │
    ▼
-1. Plan      NVIDIA Nemotron (fast model) on Nebius Token Factory
+1. Plan      NVIDIA Nemotron 3 Nano (fast model) on Nebius Token Factory
              restates the situation, lists assumptions, writes search queries
    │
    ▼
@@ -39,7 +39,7 @@ The verdict is one of: **Likely allowed**, **Needs authorization first**, **Like
 ## How we use NVIDIA and Nebius
 
 - **Nebius Token Factory** hosts both models. Every check makes runtime calls to the Token Factory inference API (`lib/nebius.ts`).
-- **Two Nemotron models, each sized to its job.** A fast Nemotron model handles the quick planning call. Nemotron 3 Ultra handles the reasoning-heavy legal analysis. This keeps answers responsive and stretches credits further.
+- **Two Nemotron models, each sized to its job.** Nemotron 3 Nano handles the quick planning call in about 3 seconds. Nemotron 3 Ultra handles the reasoning-heavy legal analysis. This keeps answers responsive and stretches credits further.
 - **Tavily** provides the search step (`lib/tavily.ts`), limited to official sources so the reasoning model works from authoritative text instead of forum posts.
 
 ## Run it locally
@@ -61,7 +61,7 @@ Open http://localhost:3000.
 |---|---|---|
 | `NEBIUS_API_KEY` | yes | API key from Nebius Token Factory |
 | `TAVILY_API_KEY` | yes | API key from [Tavily](https://app.tavily.com) |
-| `NEBIUS_FAST_MODEL` | no | Planner model ID (default `nvidia/nemotron-3-super-120b-a12b`) |
+| `NEBIUS_FAST_MODEL` | no | Planner model ID (default `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`) |
 | `NEBIUS_REASONING_MODEL` | no | Analysis model ID (default `nvidia/Nemotron-3-Ultra-550b-a55b`) |
 | `NEBIUS_BASE_URL` | no | Defaults to `https://api.tokenfactory.nebius.com/v1` |
 | `MOCK_MODE` | no | `1` streams canned sample data with no API calls, for UI work |

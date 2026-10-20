@@ -15,8 +15,9 @@ export function getConfig() {
     nebiusBaseUrl:
       process.env.NEBIUS_BASE_URL || "https://api.tokenfactory.nebius.com/v1",
     // Model IDs differ by account; run `npm run models` to list the exact ones your key can use.
+    // Nano handles the quick planning call; Ultra does the legal reasoning.
     fastModel:
-      process.env.NEBIUS_FAST_MODEL || "nvidia/nemotron-3-super-120b-a12b",
+      process.env.NEBIUS_FAST_MODEL || "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
     reasoningModel:
       process.env.NEBIUS_REASONING_MODEL || "nvidia/Nemotron-3-Ultra-550b-a55b",
     tavilyApiKey: process.env.TAVILY_API_KEY ?? "",
