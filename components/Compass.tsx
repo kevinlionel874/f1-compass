@@ -147,18 +147,18 @@ export default function Compass() {
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 pt-5">
         <div className="flex items-center gap-2.5">
           <Logo />
-          <span className="text-[17px] font-semibold tracking-tight">F1 Compass</span>
+          <span className="text-[18px] font-extrabold tracking-tight">F1 Compass</span>
         </div>
         <ThemePicker />
       </header>
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-20">
         <section className="pt-12 sm:pt-20">
-          <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs font-medium text-muted backdrop-blur">
+          <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs font-semibold text-muted backdrop-blur">
             <span className="size-1.5 rounded-full bg-accent" />
             For F-1 international students
           </p>
-          <h1 className="mt-5 font-display text-[46px] leading-[1.02] tracking-tight text-balance sm:text-[68px]">
+          <h1 className="mt-5 font-display text-[42px] leading-[1.08] font-extrabold tracking-tight text-balance sm:text-[60px]">
             Know <em className="text-accent">before</em> you work.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-muted sm:text-lg sm:leading-8">
@@ -172,7 +172,7 @@ export default function Compass() {
           onSubmit={check}
           className="mt-9 rounded-3xl border border-line bg-surface/80 p-4 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_30px_60px_-30px_var(--glow)] backdrop-blur-xl sm:p-6"
         >
-          <label htmlFor="question" className="text-sm font-medium">
+          <label htmlFor="question" className="text-sm font-semibold">
             What do you want to do?
           </label>
           <textarea
@@ -189,7 +189,7 @@ export default function Compass() {
           />
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-[11px] font-semibold tracking-widest text-muted uppercase">Try</span>
+            <span className="mr-1 text-[11px] font-bold tracking-widest text-muted uppercase">Try</span>
             {EXAMPLES.map((ex) => (
               <button
                 key={ex}
@@ -204,7 +204,7 @@ export default function Compass() {
 
           <div className="mt-5 flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-end">
             <div className="flex-1">
-              <label htmlFor="school" className="text-sm font-medium">
+              <label htmlFor="school" className="text-sm font-semibold">
                 Your school&apos;s international office site{" "}
                 <span className="font-normal text-muted">(optional)</span>
               </label>
@@ -222,7 +222,7 @@ export default function Compass() {
             <button
               type="submit"
               disabled={running || !question.trim()}
-              className="group inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-accent px-6 font-medium text-accent-contrast shadow-[0_10px_28px_-10px_var(--glow),inset_0_1px_0_rgb(255_255_255/0.18)] transition hover:bg-accent-strong active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
+              className="group inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-accent px-6 font-bold text-accent-contrast shadow-[0_10px_28px_-10px_var(--glow),inset_0_1px_0_rgb(255_255_255/0.18)] transition hover:bg-accent-strong active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
             >
               {running ? (
                 <>
@@ -312,7 +312,7 @@ function Progress({
               )}
             </span>
             <span className="min-w-0">
-              <span className="block text-sm font-medium">{s.label}</span>
+              <span className="block text-sm font-semibold">{s.label}</span>
               {detail[s.id] && (
                 <span className="block truncate font-mono text-[11px] text-muted">{detail[s.id]}</span>
               )}
@@ -350,11 +350,11 @@ function ResultView({ result, sources }: { result: Result; sources: Source[] }) 
             >
               <VerdictIcon name={verdict.icon} />
             </span>
-            <span className={`rounded-full px-3 py-1 text-sm font-semibold ring-1 ring-inset ${verdict.tone}`}>
+            <span className={`rounded-full px-3 py-1 text-sm font-bold ring-1 ring-inset ${verdict.tone}`}>
               {verdict.label}
             </span>
           </div>
-          <h2 className="mt-4 text-xl leading-snug font-semibold tracking-tight text-balance sm:text-2xl">
+          <h2 className="mt-4 text-xl leading-snug font-bold tracking-tight text-balance sm:text-2xl">
             {a.headline}
           </h2>
           <div className="mt-4 space-y-3 text-[15px] leading-7 text-fg/85">
@@ -368,12 +368,12 @@ function ResultView({ result, sources }: { result: Result; sources: Source[] }) 
 
           {a.authorizationPaths.length > 0 && (
             <div className="mt-6 border-t border-line pt-5">
-              <h3 className="text-[11px] font-semibold tracking-widest text-muted uppercase">
+              <h3 className="text-[11px] font-bold tracking-widest text-muted uppercase">
                 Ways to do this legally
               </h3>
               <div className="mt-2.5 flex flex-wrap gap-2">
                 {a.authorizationPaths.map((p) => (
-                  <span key={p} className="rounded-xl bg-accent-soft px-3 py-1.5 text-sm font-medium text-accent">
+                  <span key={p} className="rounded-xl bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent">
                     {p}
                   </span>
                 ))}
@@ -392,7 +392,7 @@ function ResultView({ result, sources }: { result: Result; sources: Source[] }) 
 
       {a.assumptions.length > 0 && (
         <div className={CARD}>
-          <h3 className="text-sm font-semibold">We assumed</h3>
+          <h3 className="text-sm font-bold">We assumed</h3>
           <BulletList items={a.assumptions} muted />
           <p className="mt-3 text-sm text-muted">
             If any of these are wrong, add the detail to your question and check again.
@@ -409,7 +409,7 @@ function Card({ title, items }: { title: string; items: string[] }) {
   if (!items.length) return null;
   return (
     <div className={CARD}>
-      <h3 className="text-sm font-semibold">{title}</h3>
+      <h3 className="text-sm font-bold">{title}</h3>
       <BulletList items={items} />
     </div>
   );
@@ -433,7 +433,7 @@ function EmailDraft({ text }: { text: string }) {
   return (
     <div className={CARD}>
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-semibold">Email to your DSO</h3>
+        <h3 className="text-sm font-bold">Email to your DSO</h3>
         <button
           type="button"
           onClick={async () => {
@@ -441,7 +441,7 @@ function EmailDraft({ text }: { text: string }) {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           }}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-1.5 text-sm font-medium transition-colors hover:border-accent/40 hover:bg-accent-soft"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-line px-3 py-1.5 text-sm font-semibold transition-colors hover:border-accent/40 hover:bg-accent-soft"
         >
           {copied ? <CheckIcon className="size-3.5 text-accent" /> : <CopyIcon />}
           {copied ? "Copied" : "Copy"}
@@ -459,7 +459,7 @@ function SourceList({ sources }: { sources: Source[] }) {
   return (
     <div className={`mt-4 ${CARD}`}>
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-sm font-semibold">Official sources</h3>
+        <h3 className="text-sm font-bold">Official sources</h3>
         <span className="text-xs text-muted">{sources.length} pages</span>
       </div>
       <ol className="mt-3 space-y-1">
@@ -477,7 +477,7 @@ function SourceList({ sources }: { sources: Source[] }) {
                 href={s.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium text-fg decoration-accent/40 underline-offset-4 hover:underline"
+                className="text-sm font-semibold text-fg decoration-accent/40 underline-offset-4 hover:underline"
               >
                 {s.title}
               </a>
