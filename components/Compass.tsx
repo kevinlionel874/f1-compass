@@ -141,9 +141,7 @@ export default function Compass() {
   const showProgress = running || plan !== null || result !== null;
 
   return (
-    <div className="relative isolate flex flex-1 flex-col overflow-x-clip bg-bg text-fg">
-      <Backdrop />
-
+    <div className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between gap-3 px-4 pt-5">
         <div className="flex items-center gap-2.5">
           <Logo />
@@ -158,7 +156,7 @@ export default function Compass() {
             <span className="size-1.5 rounded-full bg-accent" />
             For F-1 international students
           </p>
-          <h1 className="mt-5 font-display text-[42px] leading-[1.08] font-extrabold tracking-tight text-balance sm:text-[60px]">
+          <h1 className="mt-5 font-display text-[clamp(44px,11.5vw,92px)] leading-[1] font-extrabold tracking-tight text-balance">
             Know <em className="text-accent">before</em> you work.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-muted sm:text-lg sm:leading-8">
@@ -518,52 +516,6 @@ function hostname(url: string): string {
   } catch {
     return url;
   }
-}
-
-/** Soft accent glow, a faint grid and a compass rose behind the hero. Purely decorative. */
-function Backdrop() {
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[680px] overflow-hidden">
-      <div className="absolute top-[-280px] left-1/2 h-[560px] w-[min(1000px,150vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,var(--glow),transparent)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--line)_1px,transparent_1px),linear-gradient(to_bottom,var(--line)_1px,transparent_1px)] [background-size:44px_44px] opacity-60 [mask-image:radial-gradient(ellipse_70%_55%_at_50%_0%,black,transparent)]" />
-      <CompassRose className="absolute -top-52 -right-64 size-[560px] text-accent opacity-[0.16] sm:-top-40 sm:-right-40 dark:opacity-25" />
-    </div>
-  );
-}
-
-function CompassRose({ className }: { className?: string }) {
-  const ticks = Array.from({ length: 72 }, (_, i) => i * 5);
-  return (
-    <svg viewBox="-300 -300 600 600" className={className} fill="none" stroke="currentColor">
-      <circle r="290" strokeWidth="1" />
-      <circle r="232" strokeWidth="1" />
-      <circle r="150" strokeWidth="0.75" strokeDasharray="2 6" />
-      {ticks.map((deg) => (
-        <line
-          key={deg}
-          x1="0"
-          y1="-290"
-          x2="0"
-          y2={deg % 45 === 0 ? -256 : -276}
-          strokeWidth={deg % 45 === 0 ? 2 : 1}
-          transform={`rotate(${deg})`}
-        />
-      ))}
-      <path
-        d="M0 -212 L24 -24 L212 0 L24 24 L0 212 L-24 24 L-212 0 L-24 -24 Z"
-        fill="currentColor"
-        fillOpacity="0.08"
-        strokeWidth="1"
-      />
-      <path
-        d="M0 -132 L15 -15 L132 0 L15 15 L0 132 L-15 15 L-132 0 L-15 -15 Z"
-        transform="rotate(45)"
-        fill="currentColor"
-        fillOpacity="0.06"
-        strokeWidth="0.75"
-      />
-    </svg>
-  );
 }
 
 function Logo() {
