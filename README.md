@@ -18,8 +18,9 @@ More than a million international students study in the U.S. on F-1 visas. Unaut
 Student question
    │
    ▼
-1. Plan      NVIDIA Nemotron 3 Nano (fast model) on Nebius Token Factory
-             restates the situation, lists assumptions, writes search queries
+1. Plan      NVIDIA Nemotron 3 Nano and Nemotron 3 Super race on Nebius Token Factory;
+             the first to answer restates the situation, lists assumptions,
+             and writes search queries (backup queries if both take over 8 s)
    │
    ▼
 2. Search    Tavily, restricted to official domains
@@ -38,8 +39,9 @@ The verdict is one of: **Likely allowed**, **Needs authorization first**, **Like
 
 ## How we use NVIDIA and Nebius
 
-- **Nebius Token Factory** hosts both models. Every check makes runtime calls to the Token Factory inference API (`lib/nebius.ts`).
-- **Two Nemotron models, each sized to its job.** Nemotron 3 Nano handles the quick planning call in about 3 seconds. Nemotron 3 Ultra handles the reasoning-heavy legal analysis. This keeps answers responsive and stretches credits further.
+- **Nebius Token Factory** hosts all three models. Every check makes runtime calls to the Token Factory inference API (`lib/nebius.ts`).
+- **Three Nemotron models, each sized to its job.** The quick planning call goes to Nemotron 3 Nano and Nemotron 3 Super at the same time; whichever answers first is used and the other request is cancelled. We added the race after measuring Nano at 3 to 40 seconds during busy hours while Super stayed around 2 seconds. Nemotron 3 Ultra handles the reasoning-heavy legal analysis.
+- **Time limits on every call.** If neither planner answers within 8 seconds, the search runs on backup queries instead of waiting. The analysis call has its own limit, so a check never hangs past the hosting platform's function timeout.
 - **Tavily** provides the search step (`lib/tavily.ts`), limited to official sources so the reasoning model works from authoritative text instead of forum posts.
 
 ## Run it locally
@@ -61,8 +63,11 @@ Open http://localhost:3000.
 |---|---|---|
 | `NEBIUS_API_KEY` | yes | API key from Nebius Token Factory |
 | `TAVILY_API_KEY` | yes | API key from [Tavily](https://app.tavily.com) |
-| `NEBIUS_FAST_MODEL` | no | Planner model ID (default `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`) |
+| `NEBIUS_FAST_MODEL` | no | First planner model ID (default `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B`) |
+| `NEBIUS_FAST_MODEL_2` | no | Second planner model ID, raced against the first (default `nvidia/nemotron-3-super-120b-a12b`) |
 | `NEBIUS_REASONING_MODEL` | no | Analysis model ID (default `nvidia/Nemotron-3-Ultra-550b-a55b`) |
+| `NEBIUS_PLAN_TIMEOUT_MS` | no | Wait this long for a planner before using backup queries (default `8000`) |
+| `NEBIUS_ANALYSIS_TIMEOUT_MS` | no | Time limit for one analysis request (default `45000`) |
 | `NEBIUS_BASE_URL` | no | Defaults to `https://api.tokenfactory.nebius.com/v1` |
 | `MOCK_MODE` | no | `1` streams canned sample data with no API calls, for UI work |
 

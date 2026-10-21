@@ -1,4 +1,5 @@
-import { getConfig, OFFICIAL_DOMAINS } from "./config";
+import { APIConnectionTimeoutError } from "openai";
+import { getConfig, OFFICIAL_DOMAINS, type Config } from "./config";
 import { runMock } from "./mock";
 import { chatJson } from "./nebius";
 import { ANALYZE_SYSTEM, buildAnalysisPrompt, PLAN_SYSTEM } from "./prompts";
@@ -14,7 +15,7 @@ import {
 
 /**
  * The whole check, in three steps:
- * 1. Nemotron 3 Nano (fast) restates the question and writes search queries,
+ * 1. Nemotron 3 Nano and Super race to restate the question and write search queries,
  * 2. Tavily searches official government sources only,
  * 3. a reasoning Nemotron model reads the sources and writes a cited assessment.
  */
@@ -32,11 +33,21 @@ export async function runCheck(
     throw new Error("The server is missing TAVILY_API_KEY. Add it to .env.local (see README).");
   }
 
-  send({ type: "status", step: "plan", message: config.fastModel });
-  const plan = toPlan(
-    await chatJson(config, config.fastModel, PLAN_SYSTEM, input.question, 1500),
-    input.question,
-  );
+  send({ type: "status", step: "plan", message: "Nemotron Nano + Super, fastest wins" });
+  let plan: Plan;
+  let planModel: string;
+  try {
+    const winner = await planWithFastestModel(config, input.question);
+    plan = winner.plan;
+    planModel = winner.model;
+    send({ type: "status", step: "plan", message: winner.model });
+  } catch (err) {
+    // Planning only shapes the search queries, so slow or failed planners shouldn't stall the check.
+    console.warn(`Planners unavailable, using backup queries: ${errorMessage(err)}`);
+    plan = backupPlan(input.question);
+    planModel = "backup queries";
+    send({ type: "status", step: "plan", message: "backup queries (fast models were slow)" });
+  }
   send({ type: "plan", plan });
 
   send({ type: "status", step: "search", message: "Tavily · official .gov sources" });
@@ -47,22 +58,74 @@ export async function runCheck(
   send({ type: "sources", sources });
 
   send({ type: "status", step: "analyze", message: config.reasoningModel });
-  const assessment = toAssessment(
-    await chatJson(
+  let raw: unknown;
+  try {
+    raw = await chatJson(
       config,
       config.reasoningModel,
       ANALYZE_SYSTEM,
       buildAnalysisPrompt(input.question, plan, sources),
       6000,
-    ),
-  );
+      { timeoutMs: config.analysisTimeoutMs, maxRetries: 1 },
+    );
+  } catch (err) {
+    if (err instanceof APIConnectionTimeoutError) {
+      throw new Error("The analysis is taking longer than usual. Please try again in a minute.");
+    }
+    throw err;
+  }
+  const assessment = toAssessment(raw);
 
   send({
     type: "result",
     assessment,
-    models: { fast: config.fastModel, reasoning: config.reasoningModel },
+    models: { fast: planModel, reasoning: config.reasoningModel },
     mock: false,
   });
+}
+
+/**
+ * Asks Nano and Super for the plan at the same time and keeps whichever answers first;
+ * the other request is cancelled. Rejects if neither answers within the plan timeout.
+ */
+async function planWithFastestModel(
+  config: Config,
+  question: string,
+): Promise<{ plan: Plan; model: string }> {
+  const models = [config.fastModel, config.fastModel2];
+  const controllers = models.map(() => new AbortController());
+  return Promise.any(
+    models.map(async (model, i) => {
+      const raw = await chatJson(config, model, PLAN_SYSTEM, question, 1500, {
+        timeoutMs: config.planTimeoutMs,
+        maxRetries: 0,
+        signal: controllers[i].signal,
+      });
+      controllers.forEach((c, j) => j !== i && c.abort());
+      return { plan: toPlan(raw, question), model };
+    }),
+  );
+}
+
+/** Used when both planners are slow or down: search from the student's own words plus the core rules. */
+function backupPlan(question: string): Plan {
+  const q = question.slice(0, 250);
+  return {
+    summary: question,
+    assumptions: [
+      "You are in F-1 status and not currently on OPT.",
+      "You are physically in the United States while doing the work.",
+    ],
+    queries: [
+      `F-1 student ${q}`,
+      `F-1 student employment authorization rules ${q}`,
+      "F-1 student on-campus and off-campus employment rules CPT OPT",
+    ],
+  };
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }
 
 // Model output is untrusted: coerce it into the shape the UI expects.
