@@ -43,3 +43,10 @@ export function normalizeDomain(value: unknown): string | undefined {
     .split(/[/?#]/)[0];
   return /^([a-z0-9-]+\.)+[a-z]{2,}$/.test(host) ? host : undefined;
 }
+
+/** A country name as typed ("China", "South Korea", "中国"): letters, spaces and a little punctuation only. */
+export function normalizeCountry(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const name = value.trim().replace(/\s+/g, " ");
+  return name.length <= 60 && /^[\p{L}][\p{L}\p{M} .,'()-]*$/u.test(name) ? name : undefined;
+}

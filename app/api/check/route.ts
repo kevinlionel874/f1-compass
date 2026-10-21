@@ -1,4 +1,4 @@
-import { normalizeDomain } from "@/lib/config";
+import { normalizeCountry, normalizeDomain } from "@/lib/config";
 import { runCheck } from "@/lib/pipeline";
 import type { StreamEvent } from "@/lib/types";
 
@@ -6,7 +6,7 @@ import type { StreamEvent } from "@/lib/types";
 export const maxDuration = 120;
 
 export async function POST(request: Request) {
-  let body: { question?: unknown; schoolDomain?: unknown };
+  let body: { question?: unknown; schoolDomain?: unknown; homeCountry?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -24,11 +24,18 @@ export async function POST(request: Request) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const send = (event: StreamEvent) =>
-        controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+      // Side work (home-country suggestions) can finish after an error closed the stream; drop it then.
+      let closed = false;
+      const send = (event: StreamEvent) => {
+        if (!closed) controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
+      };
       try {
         await runCheck(
-          { question, schoolDomain: normalizeDomain(body.schoolDomain) },
+          {
+            question,
+            schoolDomain: normalizeDomain(body.schoolDomain),
+            homeCountry: normalizeCountry(body.homeCountry),
+          },
           send,
         );
       } catch (err) {
@@ -38,6 +45,7 @@ export async function POST(request: Request) {
           message: err instanceof Error ? err.message : "Something went wrong.",
         });
       } finally {
+        closed = true;
         controller.close();
       }
     },

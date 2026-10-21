@@ -2,12 +2,19 @@ import { APIConnectionTimeoutError } from "openai";
 import { getConfig, OFFICIAL_DOMAINS, type Config } from "./config";
 import { runMock } from "./mock";
 import { chatJson } from "./nebius";
-import { ANALYZE_SYSTEM, buildAnalysisPrompt, PLAN_SYSTEM } from "./prompts";
+import {
+  ANALYZE_SYSTEM,
+  buildAnalysisPrompt,
+  buildHomePrompt,
+  HOME_SYSTEM,
+  PLAN_SYSTEM,
+} from "./prompts";
 import { searchOfficialSources } from "./tavily";
 import {
   VERDICTS,
   type Assessment,
   type CheckInput,
+  type HomeOptions,
   type Plan,
   type StreamEvent,
   type Verdict,
@@ -32,6 +39,13 @@ export async function runCheck(
   if (!config.tavilyApiKey) {
     throw new Error("The server is missing TAVILY_API_KEY. Add it to .env.local (see README).");
   }
+
+  // Home-country suggestions run alongside the main check and never hold it up or fail it.
+  const homeTask = input.homeCountry
+    ? suggestHomeRoles(config, input.question, input.homeCountry)
+        .then((homeOptions) => send({ type: "homeOptions", homeOptions }))
+        .catch((err) => console.warn(`Home-country suggestions skipped: ${errorMessage(err)}`))
+    : Promise.resolve();
 
   send({ type: "status", step: "plan", message: "Nemotron Nano + Super, fastest wins" });
   let plan: Plan;
@@ -82,6 +96,46 @@ export async function runCheck(
     models: { fast: planModel, reasoning: config.reasoningModel },
     mock: false,
   });
+
+  // Keep the stream open until the suggestions arrive (they usually already have).
+  await homeTask;
+}
+
+/** Roles close to the student's question that they could do in their home country while physically there. */
+async function suggestHomeRoles(
+  config: Config,
+  question: string,
+  country: string,
+): Promise<HomeOptions> {
+  const raw = await chatJson(
+    config,
+    config.fastModel2,
+    HOME_SYSTEM,
+    buildHomePrompt(question, country),
+    1500,
+    { timeoutMs: 25000, maxRetries: 0 },
+  );
+  const obj = (raw ?? {}) as Record<string, unknown>;
+  const roles = (Array.isArray(obj.roles) ? obj.roles : [])
+    .map((r) => {
+      const role = (r ?? {}) as Record<string, unknown>;
+      return {
+        title: str(role.title),
+        whyItFits: str(role.whyItFits),
+        howToFind: str(role.howToFind),
+      };
+    })
+    .filter((r) => r.title)
+    .slice(0, 3);
+  if (!roles.length) throw new Error("no roles in the model's answer");
+  return {
+    country,
+    roles,
+    caveat: str(
+      obj.caveat,
+      "Confirm with your DSO before working remotely from abroad during the semester, and follow your home country's tax and labor rules.",
+    ),
+  };
 }
 
 /**

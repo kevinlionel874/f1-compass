@@ -38,6 +38,19 @@ export interface Assessment {
   assumptions: string[];
 }
 
+/** A kind of work, similar to what the student asked about, they could do in their home country. */
+export interface HomeRole {
+  title: string;
+  whyItFits: string;
+  howToFind: string;
+}
+
+export interface HomeOptions {
+  country: string;
+  roles: HomeRole[];
+  caveat: string;
+}
+
 export type Step = "plan" | "search" | "analyze";
 
 /** Events streamed from /api/check to the browser, one JSON object per line. */
@@ -51,9 +64,11 @@ export type StreamEvent =
       models: { fast: string; reasoning: string };
       mock: boolean;
     }
+  | { type: "homeOptions"; homeOptions: HomeOptions }
   | { type: "error"; message: string };
 
 export interface CheckInput {
   question: string;
   schoolDomain?: string;
+  homeCountry?: string;
 }

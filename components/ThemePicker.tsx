@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   ACCENTS,
   DEFAULT_ACCENT,
@@ -52,14 +52,43 @@ export default function ThemePicker() {
     return () => query.removeEventListener("change", onChange);
   }, [accent, mode]);
 
+  // Collapsed to a single palette button; opens to the swatches and mode toggle.
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Close on a click outside or Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   const next = NEXT_MODE[mode];
 
   return (
     <div
+      ref={rootRef}
       role="group"
       aria-label="Color theme"
-      className="flex items-center gap-1.5 rounded-full border border-line bg-surface/70 p-1.5 shadow-sm backdrop-blur-md"
+      className="flex items-center rounded-full border border-line bg-surface/70 p-1 shadow-sm backdrop-blur-md"
     >
+      <div
+        id="theme-options"
+        inert={!open}
+        className={`flex items-center gap-1.5 overflow-hidden transition-[max-width,opacity,padding] duration-300 ease-out motion-reduce:transition-none ${
+          open ? "max-w-[260px] py-0.5 pr-1.5 pl-1 opacity-100" : "max-w-0 p-0 opacity-0"
+        }`}
+      >
       {ACCENTS.map((a) => (
         <button
           key={a.id}
@@ -69,20 +98,63 @@ export default function ThemePicker() {
           title={a.label}
           onClick={() => saveTheme(a.id, mode)}
           style={{ backgroundColor: a.swatch }}
-          className="size-5 rounded-full ring-1 ring-black/10 ring-inset transition-transform hover:scale-110 aria-pressed:ring-2 aria-pressed:ring-fg aria-pressed:ring-offset-2 aria-pressed:ring-offset-surface dark:ring-white/15 motion-reduce:transition-none"
+          className="size-5 shrink-0 rounded-full ring-1 ring-black/10 ring-inset transition-transform hover:scale-110 aria-pressed:ring-2 aria-pressed:ring-fg aria-pressed:ring-offset-2 aria-pressed:ring-offset-surface dark:ring-white/15 motion-reduce:transition-none"
         />
       ))}
-      <span className="mx-0.5 h-5 w-px bg-line" aria-hidden />
+      <span className="mx-0.5 h-5 w-px shrink-0 bg-line" aria-hidden />
       <button
         type="button"
         onClick={() => saveTheme(accent, next)}
         aria-label={`Color mode: ${MODE_LABEL[mode]}. Switch to ${MODE_LABEL[next]}.`}
         title={MODE_LABEL[mode]}
-        className="flex size-7 items-center justify-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-fg"
+        className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-fg"
       >
         <ModeIcon mode={mode} />
       </button>
+      </div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-controls="theme-options"
+        aria-label={open ? "Hide color options" : "Change colors"}
+        title={open ? "Hide color options" : "Change colors"}
+        className="flex size-8 shrink-0 items-center justify-center rounded-full text-accent transition-colors hover:bg-accent-soft"
+      >
+        {open ? <CloseIcon /> : <PaletteIcon />}
+      </button>
     </div>
+  );
+}
+
+const STROKE = {
+  viewBox: "0 0 24 24",
+  className: "size-[18px]",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.8,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+function PaletteIcon() {
+  return (
+    <svg {...STROKE}>
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.8-1.7 1.7-1.7h2c3 0 5.5-2.5 5.5-5.5C22 6 17.5 2 12 2Z" />
+      <circle cx="7.5" cy="11.5" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="9.5" cy="7" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="14.5" cy="7" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="17.5" cy="11" r="1.2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg {...STROKE}>
+      <path d="M6 6l12 12M18 6 6 18" />
+    </svg>
   );
 }
 

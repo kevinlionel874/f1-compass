@@ -39,6 +39,30 @@ Respond with JSON only, no other text:
   "assumptions": string[]        // facts you assumed
 }`;
 
+export const HOME_SYSTEM = `You help F-1 international students in the United States find lawful ways to use their skills.
+
+The student described something they want to do. Suggest 3 roles or gigs, close to what they asked about (same skills or industry), that they could take on in their home country while they are physically there, for example during summer or winter break, or after they return home.
+
+Rules:
+- Be concrete: give a job title and the kind of employer or client.
+- Do not invent specific companies, salaries, job postings or URLs.
+- "howToFind": one short, practical tip on where people in that country usually look for this kind of work. Describe the kind of channel (national job sites, freelance marketplaces, the university career office, alumni groups). Name at most one platform, and only one of the largest, best-known job sites in that country; never combine a global brand with a country name to make up a local version.
+- Never suggest doing the work while physically in the U.S. without authorization.
+- Write every text field in the same language the student used in their question.
+
+Respond with JSON only, no other text:
+{
+  "roles": [{"title": string, "whyItFits": string, "howToFind": string}],
+  "caveat": string  // one sentence: confirm with the DSO before working remotely from abroad during the semester, and follow the home country's tax and labor rules
+}`;
+
+export function buildHomePrompt(question: string, country: string): string {
+  return `Home country: ${country}
+
+What the student wants to do:
+${question}`;
+}
+
 export function buildAnalysisPrompt(
   question: string,
   plan: Plan,

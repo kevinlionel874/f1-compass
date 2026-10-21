@@ -12,7 +12,22 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import ThemePicker from "@/components/ThemePicker";
-import type { Assessment, Plan, Source, Step, StreamEvent, Verdict } from "@/lib/types";
+import type {
+  Assessment,
+  HomeOptions,
+  Plan,
+  Source,
+  Step,
+  StreamEvent,
+  Verdict,
+} from "@/lib/types";
+
+// Suggestions for the home-country field: common places of origin for international students in the U.S.
+const COUNTRIES = [
+  "China", "India", "South Korea", "Canada", "Vietnam", "Taiwan", "Nigeria", "Japan", "Brazil",
+  "Bangladesh", "Nepal", "Pakistan", "Mexico", "Saudi Arabia", "Iran", "Ghana", "Colombia",
+  "Indonesia", "Turkey", "Kenya",
+];
 
 const EXAMPLES = [
   "Freelance web development for a client in China while I'm studying in Illinois",
@@ -81,6 +96,9 @@ export default function Compass() {
   const [sources, setSources] = useState<Source[]>([]);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [homeCountry, setHomeCountry] = useState("");
+  const [askedCountry, setAskedCountry] = useState("");
+  const [homeOptions, setHomeOptions] = useState<HomeOptions | null>(null);
   const [asked, setAsked] = useState("");
   const [whyOpen, setWhyOpen] = useState(false);
   const [sourcesOpen, setSourcesOpen] = useState(false);
@@ -112,6 +130,8 @@ export default function Compass() {
     setResult(null);
     setError(null);
     setAsked(q);
+    setAskedCountry(homeCountry.trim());
+    setHomeOptions(null);
     setWhyOpen(false);
     setSourcesOpen(false);
 
@@ -132,6 +152,9 @@ export default function Compass() {
           finished = true;
           setResult({ assessment: event.assessment, models: event.models, mock: event.mock });
           break;
+        case "homeOptions":
+          setHomeOptions(event.homeOptions);
+          break;
         case "error":
           finished = true;
           setError(event.message);
@@ -143,7 +166,7 @@ export default function Compass() {
       const res = await fetch("/api/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, schoolDomain }),
+        body: JSON.stringify({ question: q, schoolDomain, homeCountry }),
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => null);
@@ -174,6 +197,7 @@ export default function Compass() {
 
   function startOver(keepQuestion: boolean) {
     setResult(null);
+    setHomeOptions(null);
     setPlan(null);
     setSources([]);
     setStepDetail({});
@@ -200,6 +224,8 @@ export default function Compass() {
             result={result}
             sources={sources}
             question={asked}
+            homeOptions={homeOptions}
+            homePendingFor={running && askedCountry && !homeOptions ? askedCountry : null}
             verdictRef={verdictRef}
             whyOpen={whyOpen}
             onWhyToggle={setWhyOpen}
@@ -277,10 +303,10 @@ export default function Compass() {
             ))}
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-end">
-            <div className="flex-1">
+          <div className="mt-5 grid gap-3 border-t border-line pt-5 sm:grid-cols-2">
+            <div>
               <label htmlFor="school" className="text-sm font-semibold">
-                Your school&apos;s international office site{" "}
+                School international office site{" "}
                 <span className="font-normal text-muted">(optional)</span>
               </label>
               <div className="relative mt-1.5">
@@ -294,10 +320,37 @@ export default function Compass() {
                 />
               </div>
             </div>
+            <div>
+              <label htmlFor="country" className="text-sm font-semibold">
+                Your home country <span className="font-normal text-muted">(optional)</span>
+              </label>
+              <div className="relative mt-1.5">
+                <PlaneIcon className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted" />
+                <input
+                  id="country"
+                  list="country-suggestions"
+                  value={homeCountry}
+                  onChange={(e) => setHomeCountry(e.target.value)}
+                  maxLength={60}
+                  autoComplete="country-name"
+                  placeholder="China"
+                  className="h-12 w-full rounded-2xl border border-line bg-surface-2 pr-4 pl-10 text-base text-fg outline-none transition placeholder:text-muted/70 focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/15"
+                />
+                <datalist id="country-suggestions">
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
+              </div>
+              <p className="mt-1.5 text-xs text-muted">We&apos;ll suggest similar work you could do there.</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex justify-end">
             <button
               type="submit"
               disabled={running || !question.trim()}
-              className="group inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-accent px-6 font-bold text-accent-contrast shadow-[0_10px_28px_-10px_var(--glow),inset_0_1px_0_rgb(255_255_255/0.18)] transition hover:bg-accent-strong active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none"
+              className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-accent px-7 font-bold text-accent-contrast shadow-[0_10px_28px_-10px_var(--glow),inset_0_1px_0_rgb(255_255_255/0.18)] transition hover:bg-accent-strong active:translate-y-px disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none sm:w-auto"
             >
               {running ? (
                 <>
@@ -411,6 +464,8 @@ function ResultScreen({
   result,
   sources,
   question,
+  homeOptions,
+  homePendingFor,
   verdictRef,
   whyOpen,
   onWhyToggle,
@@ -422,6 +477,9 @@ function ResultScreen({
   result: Result;
   sources: Source[];
   question: string;
+  homeOptions: HomeOptions | null;
+  /** The home country we're still fetching suggestions for, if any. */
+  homePendingFor: string | null;
   verdictRef: RefObject<HTMLHeadingElement | null>;
   whyOpen: boolean;
   onWhyToggle: (open: boolean) => void;
@@ -511,6 +569,12 @@ function ResultScreen({
         </div>
       </div>
 
+      {homeOptions ? (
+        <HomeOptionsCard options={homeOptions} />
+      ) : (
+        homePendingFor && <HomeOptionsLoading country={homePendingFor} />
+      )}
+
       <div className="mt-6 space-y-3">
         <Section id="why" title={v.why} open={whyOpen} onToggle={onWhyToggle} highlight>
           <div className="space-y-3 text-[15px] leading-7 text-fg/85">
@@ -573,6 +637,71 @@ function ResultScreen({
             <SourceList sources={sources} />
           </Section>
         )}
+      </div>
+    </section>
+  );
+}
+
+function HomeOptionsHeader({ country, loading = false }: { country: string; loading?: boolean }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+        {loading ? <Spinner className="size-5" /> : <PlaneIcon className="size-5" />}
+      </span>
+      <div className="min-w-0">
+        <h3 className="text-lg leading-snug font-extrabold text-balance">
+          {loading ? `Finding similar work in ${country}…` : `Similar roles back in ${country}`}
+        </h3>
+        <p className="mt-0.5 text-sm leading-6 text-muted">
+          Work close to what you asked about that you could do while you&apos;re physically in{" "}
+          {country}, for example over summer or winter break.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Suggestions for the student's home country, with a job search for each. */
+function HomeOptionsCard({ options }: { options: HomeOptions }) {
+  return (
+    <section className="rise-in mt-4 rounded-3xl border border-line bg-surface p-5 sm:p-6">
+      <HomeOptionsHeader country={options.country} />
+      <ul className="mt-5 grid gap-3 sm:grid-cols-3">
+        {options.roles.map((r) => (
+          <li key={r.title} className="flex min-w-0 flex-col rounded-2xl border border-line bg-surface-2 p-4">
+            <p className="leading-snug font-bold">{r.title}</p>
+            {r.whyItFits && <p className="mt-2 text-sm leading-6 text-muted">{r.whyItFits}</p>}
+            {r.howToFind && (
+              <p className="mt-3 text-xs leading-5 text-fg/75">
+                <span className="font-bold">Where to look: </span>
+                {r.howToFind}
+              </p>
+            )}
+            <a
+              href={`https://www.google.com/search?q=${encodeURIComponent(`${r.title} jobs in ${options.country}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group mt-auto inline-flex items-center gap-1 pt-4 text-sm font-bold text-accent hover:underline"
+            >
+              Search jobs
+              <ArrowIcon />
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-4 text-xs leading-5 text-muted">{options.caveat}</p>
+    </section>
+  );
+}
+
+function HomeOptionsLoading({ country }: { country: string }) {
+  return (
+    <section aria-busy className="mt-4 rounded-3xl border border-line bg-surface p-5 sm:p-6">
+      <HomeOptionsHeader country={country} loading />
+      <div className="mt-5 grid gap-3 sm:grid-cols-3" aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-36 rounded-2xl bg-surface-2 motion-safe:animate-pulse" />
+        ))}
       </div>
     </section>
   );
@@ -786,6 +915,14 @@ function VerdictStamp({ word, className }: { word: string; className?: string })
           {word}
         </text>
       </g>
+    </svg>
+  );
+}
+
+function PlaneIcon({ className }: { className?: string }) {
+  return (
+    <svg {...ICON} strokeWidth={1.7} className={className}>
+      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
     </svg>
   );
 }
