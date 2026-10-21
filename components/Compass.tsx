@@ -157,7 +157,25 @@ export default function Compass() {
             For F-1 international students
           </p>
           <h1 className="mt-5 font-display text-[clamp(44px,11.5vw,92px)] leading-[1] font-extrabold tracking-tight text-balance">
-            Know <em className="text-accent">before</em> you work.
+            Know{" "}
+            <span className="relative inline-block text-[1.25em] leading-[0.9]">
+              <em className="font-[1000] text-accent">before</em>
+              <svg
+                viewBox="0 0 200 20"
+                preserveAspectRatio="none"
+                aria-hidden
+                className="absolute -bottom-[0.06em] left-0 h-[0.16em] w-full text-accent"
+              >
+                <path
+                  d="M4 14 C 60 3, 140 3, 196 11"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>{" "}
+            you work.
           </h1>
           <p className="mt-5 max-w-xl text-base leading-7 text-muted sm:text-lg sm:leading-8">
             Describe what you want to do. F1 Compass reads official U.S. government sources and
