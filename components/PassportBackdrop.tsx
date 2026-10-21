@@ -58,7 +58,7 @@ export default function PassportBackdrop() {
       <svg
         viewBox="0 0 1600 620"
         preserveAspectRatio="xMidYMin slice"
-        className="absolute inset-0 h-full w-full text-accent opacity-[0.13] [mask-image:linear-gradient(to_bottom,black_35%,transparent_95%)] dark:opacity-[0.17]"
+        className="absolute inset-0 h-full w-full text-(--ink) opacity-[0.13] transition-colors duration-700 [mask-image:linear-gradient(to_bottom,black_35%,transparent_95%)] dark:opacity-[0.17]"
         fill="none"
         stroke="currentColor"
       >
@@ -69,7 +69,7 @@ export default function PassportBackdrop() {
 
       <svg
         viewBox="-260 -260 520 520"
-        className="absolute -top-44 -right-56 size-[620px] text-accent opacity-[0.2] sm:-top-36 sm:-right-32 dark:opacity-[0.26]"
+        className="absolute -top-44 -right-56 size-[620px] text-(--ink) opacity-[0.2] transition-colors duration-700 sm:-top-36 sm:-right-32 dark:opacity-[0.26]"
         fill="none"
         stroke="currentColor"
       >
@@ -80,7 +80,7 @@ export default function PassportBackdrop() {
         <circle r="246" strokeWidth="0.6" vectorEffect="non-scaling-stroke" />
       </svg>
 
-      <VisaStamp className="absolute top-[92px] -right-16 size-[150px] -rotate-12 text-accent opacity-[0.22] sm:top-[150px] sm:right-auto sm:left-[calc(50%+150px)] sm:size-[230px] dark:opacity-[0.3]" />
+      <VisaStamp className="visa-stamp absolute top-[92px] -right-16 size-[150px] -rotate-12 text-(--ink) opacity-[0.22] transition-[color,opacity] duration-700 sm:top-[150px] sm:right-auto sm:left-[calc(50%+150px)] sm:size-[230px] dark:opacity-[0.3]" />
     </div>
   );
 }

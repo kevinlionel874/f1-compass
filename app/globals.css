@@ -49,6 +49,33 @@
 [data-theme="dark"][data-accent="sunset"] { --accent: #fb923c; --accent-strong: #fdba74; }
 [data-theme="dark"][data-accent="graphite"] { --accent: #e4e4e7; --accent-strong: #ffffff; }
 
+/* Verdict colors are semantic and independent of the accent theme. */
+:root {
+  --v-allowed: #059669;
+  --v-auth: #d97706;
+  --v-no: #e11d48;
+  --v-unclear: #64748b;
+  /* The color the passport backdrop is printed in. */
+  --ink: var(--accent);
+}
+
+[data-theme="dark"] {
+  --v-allowed: #34d399;
+  --v-auth: #fbbf24;
+  --v-no: #fb7185;
+  --v-unclear: #94a3b8;
+}
+
+/* After a check, Compass sets data-verdict on <html> and the whole page takes on the verdict's color. */
+[data-verdict="likely_allowed"] { --verdict: var(--v-allowed); }
+[data-verdict="needs_authorization"] { --verdict: var(--v-auth); }
+[data-verdict="likely_not_allowed"] { --verdict: var(--v-no); }
+[data-verdict="unclear"] { --verdict: var(--v-unclear); }
+[data-verdict] {
+  --ink: var(--verdict);
+  --glow: color-mix(in oklab, var(--verdict) 32%, transparent);
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -81,8 +108,53 @@ body {
   background: var(--accent-soft);
 }
 
+/* On the verdict screen the card carries its own stamp, so the backdrop's question-mark stamp steps aside. */
+[data-verdict] .visa-stamp {
+  opacity: 0;
+}
+
+/* The verdict stamp "lands" on the card. */
+@keyframes stamp-slam {
+  0% { scale: 1.8; opacity: 0; }
+  55% { scale: 0.94; opacity: 1; }
+  100% { scale: 1; opacity: 1; }
+}
+.verdict-stamp {
+  animation: stamp-slam 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both;
+}
+
+/* Verdict screen entrance. */
+@keyframes verdict-pop {
+  0% { scale: 0.4; opacity: 0; }
+  70% { scale: 1.08; }
+  100% { scale: 1; opacity: 1; }
+}
+.verdict-pop {
+  animation: verdict-pop 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+@keyframes verdict-ring {
+  0% { scale: 0.8; opacity: 0.6; }
+  100% { scale: 1.9; opacity: 0; }
+}
+.verdict-ring {
+  animation: verdict-ring 1.4s ease-out 0.25s both;
+}
+@keyframes rise-in {
+  from { translate: 0 14px; opacity: 0; }
+  to { translate: 0 0; opacity: 1; }
+}
+.rise-in {
+  animation: rise-in 0.5s ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     transition: none;
+  }
+  .verdict-stamp,
+  .verdict-pop,
+  .verdict-ring,
+  .rise-in {
+    animation: none;
   }
 }

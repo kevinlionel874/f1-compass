@@ -1,6 +1,16 @@
 "use client";
 
-import { Fragment, useState, type FormEvent, type ReactNode } from "react";
+import {
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import { flushSync } from "react-dom";
 import ThemePicker from "@/components/ThemePicker";
 import type { Assessment, Plan, Source, Step, StreamEvent, Verdict } from "@/lib/types";
 
@@ -18,38 +28,42 @@ const STEPS: { id: Step; label: string }[] = [
   { id: "analyze", label: "Checking the rules" },
 ];
 
-// Verdict colors are semantic and stay the same in every accent theme.
-const VERDICT_STYLE: Record<
+type IconName = "check" | "key" | "x" | "question";
+
+// Verdict colors are semantic (the --v-* tokens in globals.css) and stay the same in every accent theme.
+const VERDICT: Record<
   Verdict,
-  { label: string; tone: string; wash: string; icon: "check" | "key" | "x" | "question" }
+  { big: string; why: string; stamp: string; color: string; icon: IconName }
 > = {
   likely_allowed: {
-    label: "Likely allowed",
-    tone: "bg-emerald-500/10 text-emerald-700 ring-emerald-600/20 dark:text-emerald-300 dark:ring-emerald-400/25",
-    wash: "from-emerald-500/10",
+    big: "Likely allowed",
+    why: "Why it's likely allowed",
+    stamp: "LIKELY OK",
+    color: "var(--v-allowed)",
     icon: "check",
   },
   needs_authorization: {
-    label: "Needs authorization first",
-    tone: "bg-amber-500/10 text-amber-700 ring-amber-600/25 dark:text-amber-300 dark:ring-amber-400/25",
-    wash: "from-amber-500/10",
+    big: "Authorization needed",
+    why: "Why you need authorization first",
+    stamp: "AUTH FIRST",
+    color: "var(--v-auth)",
     icon: "key",
   },
   likely_not_allowed: {
-    label: "Likely not allowed",
-    tone: "bg-rose-500/10 text-rose-700 ring-rose-600/20 dark:text-rose-300 dark:ring-rose-400/25",
-    wash: "from-rose-500/10",
+    big: "Likely not allowed",
+    why: "Why it's likely not allowed",
+    stamp: "NOT ALLOWED",
+    color: "var(--v-no)",
     icon: "x",
   },
   unclear: {
-    label: "Unclear: ask your DSO",
-    tone: "bg-zinc-500/10 text-zinc-700 ring-zinc-500/25 dark:text-zinc-300 dark:ring-zinc-400/25",
-    wash: "from-zinc-500/10",
+    big: "Unclear",
+    why: "Why we can't say for sure",
+    stamp: "ASK YOUR DSO",
+    color: "var(--v-unclear)",
     icon: "question",
   },
 };
-
-const CARD = "rounded-2xl border border-line bg-surface p-5";
 
 interface Result {
   assessment: Assessment;
@@ -67,6 +81,23 @@ export default function Compass() {
   const [sources, setSources] = useState<Source[]>([]);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [asked, setAsked] = useState("");
+  const [whyOpen, setWhyOpen] = useState(false);
+  const [sourcesOpen, setSourcesOpen] = useState(false);
+  const verdictRef = useRef<HTMLHeadingElement>(null);
+
+  // A verdict recolors the whole page (backdrop, glow, visa stamp) through <html data-verdict>.
+  useEffect(() => {
+    if (!result) return;
+    const root = document.documentElement;
+    root.dataset.verdict = result.assessment.verdict;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+    verdictRef.current?.focus({ preventScroll: true });
+    return () => {
+      delete root.dataset.verdict;
+    };
+  }, [result]);
 
   async function check(e?: FormEvent) {
     e?.preventDefault();
@@ -80,6 +111,9 @@ export default function Compass() {
     setSources([]);
     setResult(null);
     setError(null);
+    setAsked(q);
+    setWhyOpen(false);
+    setSourcesOpen(false);
 
     let finished = false;
     const handle = (event: StreamEvent) => {
@@ -138,7 +172,17 @@ export default function Compass() {
     }
   }
 
-  const showProgress = running || plan !== null || result !== null;
+  function startOver(keepQuestion: boolean) {
+    setResult(null);
+    setPlan(null);
+    setSources([]);
+    setStepDetail({});
+    setError(null);
+    if (!keepQuestion) setQuestion("");
+    requestAnimationFrame(() => document.getElementById("question")?.focus());
+  }
+
+  const showProgress = running || plan !== null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -151,6 +195,21 @@ export default function Compass() {
       </header>
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-20">
+        {result ? (
+          <ResultScreen
+            result={result}
+            sources={sources}
+            question={asked}
+            verdictRef={verdictRef}
+            whyOpen={whyOpen}
+            onWhyToggle={setWhyOpen}
+            sourcesOpen={sourcesOpen}
+            onSourcesToggle={setSourcesOpen}
+            onEdit={() => startOver(true)}
+            onNew={() => startOver(false)}
+          />
+        ) : (
+          <>
         <section className="pt-12 sm:pt-20">
           <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/70 px-3 py-1 text-xs font-semibold text-muted backdrop-blur">
             <span className="size-1.5 rounded-full bg-accent" />
@@ -267,9 +326,13 @@ export default function Compass() {
           </div>
         )}
 
-        {result && <ResultView result={result} sources={sources} />}
-
-        {!result && sources.length > 0 && <SourceList sources={sources} />}
+        {running && sources.length > 0 && (
+          <p className="mt-3 px-1 text-sm text-muted">
+            Found {sources.length} official pages. Reading them now…
+          </p>
+        )}
+          </>
+        )}
       </main>
 
       <footer className="border-t border-line px-4 py-8">
@@ -340,94 +403,212 @@ function Progress({
   );
 }
 
-function ResultView({ result, sources }: { result: Result; sources: Source[] }) {
+/**
+ * After a check the page turns into the verdict: a big colored answer up top,
+ * and the reasons in collapsible sections below.
+ */
+function ResultScreen({
+  result,
+  sources,
+  question,
+  verdictRef,
+  whyOpen,
+  onWhyToggle,
+  sourcesOpen,
+  onSourcesToggle,
+  onEdit,
+  onNew,
+}: {
+  result: Result;
+  sources: Source[];
+  question: string;
+  verdictRef: RefObject<HTMLHeadingElement | null>;
+  whyOpen: boolean;
+  onWhyToggle: (open: boolean) => void;
+  sourcesOpen: boolean;
+  onSourcesToggle: (open: boolean) => void;
+  onEdit: () => void;
+  onNew: () => void;
+}) {
   const { assessment: a } = result;
-  const verdict = VERDICT_STYLE[a.verdict];
+  const v = VERDICT[a.verdict];
   const ids = new Set(sources.map((s) => s.id));
+  // Citations point into the collapsed sources section: open it synchronously so the #source-n jump lands.
+  const openSources = () => flushSync(() => onSourcesToggle(true));
 
   return (
-    <section className="mt-6 space-y-4">
+    <section className="pt-8 sm:pt-12" style={{ "--verdict": v.color } as CSSProperties}>
+      <div className="rise-in flex flex-col gap-3 rounded-2xl border border-line bg-surface/80 px-4 py-3 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <p className="min-w-0 text-sm leading-6 text-muted">
+          <span className="font-bold text-fg">You asked: </span>
+          {question}
+        </p>
+        <div className="flex shrink-0 gap-2">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-xl border border-line px-3 py-1.5 text-sm font-semibold transition-colors hover:border-accent/40 hover:bg-accent-soft"
+          >
+            Edit question
+          </button>
+          <button
+            type="button"
+            onClick={onNew}
+            className="rounded-xl bg-accent px-3 py-1.5 text-sm font-bold text-accent-contrast transition hover:bg-accent-strong"
+          >
+            New check
+          </button>
+        </div>
+      </div>
+
       {result.mock && (
-        <p className="rounded-2xl border border-dashed border-amber-500/50 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
+        <p className="mt-4 rounded-2xl border border-dashed border-amber-500/50 bg-amber-500/10 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-300">
           Mock mode: this is sample data, not a real analysis. Set MOCK_MODE=0 and add API keys to
           run real checks.
         </p>
       )}
 
-      <div className="relative overflow-hidden rounded-3xl border border-line bg-surface p-5 shadow-[0_1px_2px_rgb(0_0_0/0.04),0_30px_60px_-34px_var(--glow)] sm:p-7">
+      <div className="relative mt-6 overflow-hidden rounded-[2rem] border border-[color:color-mix(in_oklab,var(--verdict)_35%,transparent)] bg-surface/85 px-6 py-12 text-center shadow-[0_40px_80px_-40px_color-mix(in_oklab,var(--verdict)_55%,transparent)] backdrop-blur-xl sm:py-16">
         <div
           aria-hidden
-          className={`pointer-events-none absolute inset-x-0 top-0 h-40 bg-linear-to-b ${verdict.wash} to-transparent`}
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_0%,color-mix(in_oklab,var(--verdict)_22%,transparent),transparent_70%)]"
+        />
+        <VerdictStamp
+          word={v.stamp}
+          className="verdict-stamp pointer-events-none absolute -top-3 -right-5 size-[118px] -rotate-12 text-(--verdict) sm:top-4 sm:right-6 sm:size-[150px]"
         />
         <div className="relative">
-          <div className="flex items-center gap-3">
-            <span
-              className={`flex size-10 items-center justify-center rounded-full ring-1 ring-inset ${verdict.tone}`}
-            >
-              <VerdictIcon name={verdict.icon} />
-            </span>
-            <span className={`rounded-full px-3 py-1 text-sm font-bold ring-1 ring-inset ${verdict.tone}`}>
-              {verdict.label}
+          <div className="relative mx-auto size-24">
+            <span aria-hidden className="verdict-ring absolute inset-0 rounded-full bg-(--verdict) opacity-0" />
+            <span className="verdict-pop relative flex size-24 items-center justify-center rounded-full bg-(--verdict) text-(--bg) shadow-[0_16px_40px_-12px_var(--verdict)]">
+              <VerdictIcon name={v.icon} className="size-12" />
             </span>
           </div>
-          <h2 className="mt-4 text-xl leading-snug font-bold tracking-tight text-balance sm:text-2xl">
-            {a.headline}
+          <p className="rise-in mt-6 text-[11px] font-bold tracking-[0.2em] text-muted uppercase">
+            F1 Compass verdict
+          </p>
+          <h2
+            ref={verdictRef}
+            tabIndex={-1}
+            className="rise-in mt-2 text-[clamp(40px,9vw,72px)] leading-[1.02] font-[1000] tracking-tight text-balance text-(--verdict) outline-none"
+          >
+            {v.big}
           </h2>
-          <div className="mt-4 space-y-3 text-[15px] leading-7 text-fg/85">
+          <p className="rise-in mx-auto mt-4 max-w-xl text-lg leading-7 font-semibold text-balance text-fg/90">
+            {a.headline}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              flushSync(() => onWhyToggle(true));
+              document.getElementById("why")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className="rise-in mt-8 inline-flex items-center gap-2 rounded-full border border-[color:color-mix(in_oklab,var(--verdict)_40%,transparent)] bg-surface px-5 py-2.5 text-sm font-bold text-(--verdict) transition hover:bg-[color:color-mix(in_oklab,var(--verdict)_10%,transparent)]"
+          >
+            {v.why}
+            <ChevronIcon className="size-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-6 space-y-3">
+        <Section id="why" title={v.why} open={whyOpen} onToggle={onWhyToggle} highlight>
+          <div className="space-y-3 text-[15px] leading-7 text-fg/85">
             {a.explanation
               .split(/\n\s*\n/)
               .filter((p) => p.trim())
               .map((p, i) => (
-                <p key={i}>{withCitations(p, ids)}</p>
+                <p key={i}>{withCitations(p, ids, openSources)}</p>
               ))}
           </div>
-
-          {a.authorizationPaths.length > 0 && (
-            <div className="mt-6 border-t border-line pt-5">
-              <h3 className="text-[11px] font-bold tracking-widest text-muted uppercase">
-                Ways to do this legally
+          {a.keyFactors.length > 0 && (
+            <>
+              <h3 className="mt-6 text-[11px] font-bold tracking-widest text-muted uppercase">
+                What decides the answer
               </h3>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                {a.authorizationPaths.map((p) => (
-                  <span key={p} className="rounded-xl bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent">
-                    {p}
-                  </span>
-                ))}
-              </div>
-            </div>
+              <BulletList items={a.keyFactors} />
+            </>
           )}
-        </div>
+        </Section>
+
+        {a.authorizationPaths.length > 0 && (
+          <Section title="Ways to do this legally">
+            <div className="flex flex-wrap gap-2">
+              {a.authorizationPaths.map((p) => (
+                <span key={p} className="rounded-xl bg-accent-soft px-3 py-1.5 text-sm font-semibold text-accent">
+                  {p}
+                </span>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {(a.questionsForDso.length > 0 || a.dsoEmail) && (
+          <Section title="Ask your DSO">
+            {a.questionsForDso.length > 0 && <BulletList items={a.questionsForDso} />}
+            {a.dsoEmail && (
+              <div className="mt-6">
+                <EmailDraft text={a.dsoEmail} />
+              </div>
+            )}
+          </Section>
+        )}
+
+        {a.assumptions.length > 0 && (
+          <Section title="What we assumed">
+            <BulletList items={a.assumptions} muted />
+            <p className="mt-3 text-sm text-muted">
+              If any of these are wrong, edit your question and check again.
+            </p>
+          </Section>
+        )}
+
+        {sources.length > 0 && (
+          <Section
+            id="sources"
+            title={`Official sources (${sources.length})`}
+            open={sourcesOpen}
+            onToggle={onSourcesToggle}
+          >
+            <SourceList sources={sources} />
+          </Section>
+        )}
       </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card title="What decides the answer" items={a.keyFactors} />
-        <Card title="Ask your DSO" items={a.questionsForDso} />
-      </div>
-
-      {a.dsoEmail && <EmailDraft text={a.dsoEmail} />}
-
-      {a.assumptions.length > 0 && (
-        <div className={CARD}>
-          <h3 className="text-sm font-bold">We assumed</h3>
-          <BulletList items={a.assumptions} muted />
-          <p className="mt-3 text-sm text-muted">
-            If any of these are wrong, add the detail to your question and check again.
-          </p>
-        </div>
-      )}
-
-      <SourceList sources={sources} />
     </section>
   );
 }
 
-function Card({ title, items }: { title: string; items: string[] }) {
-  if (!items.length) return null;
+/** A collapsible block. Pass `open` and `onToggle` to control it; leave them out to let the browser manage it. */
+function Section({
+  id,
+  title,
+  open,
+  onToggle,
+  highlight = false,
+  children,
+}: {
+  id?: string;
+  title: string;
+  open?: boolean;
+  onToggle?: (open: boolean) => void;
+  highlight?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <div className={CARD}>
-      <h3 className="text-sm font-bold">{title}</h3>
-      <BulletList items={items} />
-    </div>
+    <details
+      id={id}
+      open={open}
+      onToggle={onToggle ? (e) => onToggle(e.currentTarget.open) : undefined}
+      className={`group scroll-mt-6 rounded-2xl border bg-surface transition-shadow open:shadow-[0_20px_40px_-28px_var(--glow)] ${
+        highlight ? "border-[color:color-mix(in_oklab,var(--verdict)_35%,transparent)]" : "border-line"
+      }`}
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-5 py-4 font-bold select-none [&::-webkit-details-marker]:hidden">
+        <span className={highlight ? "text-(--verdict)" : undefined}>{title}</span>
+        <ChevronIcon className="size-5 shrink-0 text-muted transition-transform group-open:rotate-180 motion-reduce:transition-none" />
+      </summary>
+      <div className="px-5 pb-5">{children}</div>
+    </details>
   );
 }
 
@@ -447,7 +628,7 @@ function BulletList({ items, muted = false }: { items: string[]; muted?: boolean
 function EmailDraft({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className={CARD}>
+    <div>
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-bold">Email to your DSO</h3>
         <button
@@ -473,12 +654,7 @@ function EmailDraft({ text }: { text: string }) {
 function SourceList({ sources }: { sources: Source[] }) {
   if (!sources.length) return null;
   return (
-    <div className={`mt-4 ${CARD}`}>
-      <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-sm font-bold">Official sources</h3>
-        <span className="text-xs text-muted">{sources.length} pages</span>
-      </div>
-      <ol className="mt-3 space-y-1">
+    <ol className="space-y-1">
         {sources.map((s) => (
           <li
             key={s.id}
@@ -502,13 +678,12 @@ function SourceList({ sources }: { sources: Source[] }) {
             </div>
           </li>
         ))}
-      </ol>
-    </div>
+    </ol>
   );
 }
 
 /** Turns "[1]" or "[1, 2]" in model text into links to the numbered sources. */
-function withCitations(text: string, ids: Set<number>): ReactNode[] {
+function withCitations(text: string, ids: Set<number>, onCite: () => void): ReactNode[] {
   return text.split(/(\[\d+(?:\s*,\s*\d+)*\])/g).map((part, i) => {
     const nums = /^\[[\d,\s]+\]$/.test(part) ? part.slice(1, -1).split(",").map((n) => Number(n.trim())) : null;
     if (!nums || !nums.every((n) => ids.has(n))) return <Fragment key={i}>{part}</Fragment>;
@@ -518,6 +693,7 @@ function withCitations(text: string, ids: Set<number>): ReactNode[] {
           <a
             key={n}
             href={`#source-${n}`}
+            onClick={onCite}
             className="mx-0.5 inline-flex min-w-5 items-center justify-center rounded-md bg-accent-soft px-1 align-[0.1em] font-mono text-[0.72em] font-semibold text-accent no-underline transition-colors hover:bg-accent hover:text-accent-contrast"
           >
             {n}
@@ -556,25 +732,68 @@ const ICON = {
   "aria-hidden": true,
 };
 
-function VerdictIcon({ name }: { name: "check" | "key" | "x" | "question" }) {
-  if (name === "check") return <CheckIcon className="size-5" />;
+function VerdictIcon({ name, className = "size-5" }: { name: IconName; className?: string }) {
+  if (name === "check") return <CheckIcon className={className} />;
   if (name === "x")
     return (
-      <svg {...ICON} className="size-5">
+      <svg {...ICON} strokeWidth={2.5} className={className}>
         <path d="M6 6l12 12M18 6 6 18" />
       </svg>
     );
   if (name === "key")
     return (
-      <svg {...ICON} className="size-5">
+      <svg {...ICON} className={className}>
         <circle cx="8" cy="15" r="4" />
         <path d="m10.8 12.2 8.7-8.7M17 6l2 2M14.5 8.5l2 2" />
       </svg>
     );
   return (
-    <svg {...ICON} className="size-5">
+    <svg {...ICON} strokeWidth={2.5} className={className}>
       <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2.5-3 4.5" />
       <path d="M12 18h.01" />
+    </svg>
+  );
+}
+
+/** A passport entry stamp carrying the verdict word. */
+function VerdictStamp({ word, className }: { word: string; className?: string }) {
+  return (
+    <svg viewBox="-130 -130 260 260" className={className} fill="none" stroke="currentColor" aria-hidden>
+      <defs>
+        <path id="verdict-stamp-ring" d="M -89 0 A 89 89 0 1 1 89 0 A 89 89 0 1 1 -89 0" />
+      </defs>
+      <g opacity="0.85">
+        <circle r="122" strokeWidth="5" />
+        <circle r="110" strokeWidth="2" />
+        <circle r="70" strokeWidth="2" />
+        <text fill="currentColor" stroke="none" fontSize="15" fontWeight="900" letterSpacing="2.6">
+          <textPath href="#verdict-stamp-ring">UNITED STATES OF AMERICA ★ F-1 STUDENT ★</textPath>
+        </text>
+        <path d="M -48 -30 H 48" strokeWidth="2" />
+        <text y="6" textAnchor="middle" fill="currentColor" stroke="none" fontSize="30" fontWeight="1000">
+          F-1
+        </text>
+        <path d="M -48 18 H 48" strokeWidth="2" />
+        <text
+          y="40"
+          textAnchor="middle"
+          fill="currentColor"
+          stroke="none"
+          fontSize={word.length > 10 ? 12 : 15}
+          fontWeight="900"
+          letterSpacing="1.2"
+        >
+          {word}
+        </text>
+      </g>
+    </svg>
+  );
+}
+
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg {...ICON} className={className}>
+      <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }
