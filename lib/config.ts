@@ -27,6 +27,10 @@ export function getConfig() {
     // Keeps plan + search + analysis (with one retry) under Vercel's 120 s function limit.
     analysisTimeoutMs: Number(process.env.NEBIUS_ANALYSIS_TIMEOUT_MS) || 45000,
     tavilyApiKey: process.env.TAVILY_API_KEY ?? "",
+    // "basic" costs 1 Tavily credit per search, "advanced" costs 2.
+    searchDepth: (process.env.TAVILY_SEARCH_DEPTH === "basic" ? "basic" : "advanced") as
+      | "basic"
+      | "advanced",
     mock: process.env.MOCK_MODE === "1",
   };
 }

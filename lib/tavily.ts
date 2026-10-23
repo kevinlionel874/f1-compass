@@ -7,11 +7,25 @@ interface TavilyResult {
   score: number;
 }
 
+export type SearchDepth = "basic" | "advanced";
+
+// Identical searches within a day reuse earlier results. Official pages change rarely, people
+// (and judges) tend to click the same examples, and every search spends Tavily credits.
+// The cache lives in server memory, so it only helps while an instance stays warm.
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const CACHE_MAX = 300;
+const cache = new Map<string, { at: number; results: TavilyResult[] }>();
+
 async function search(
   query: string,
   domains: string[],
   apiKey: string,
+  depth: SearchDepth,
 ): Promise<TavilyResult[]> {
+  const key = `${depth}|${domains.join(",")}|${query.trim().toLowerCase()}`;
+  const hit = cache.get(key);
+  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.results;
+
   const res = await fetch("https://api.tavily.com/search", {
     method: "POST",
     headers: {
@@ -20,7 +34,7 @@ async function search(
     },
     body: JSON.stringify({
       query,
-      search_depth: "advanced",
+      search_depth: depth,
       max_results: 5,
       include_domains: domains,
     }),
@@ -29,7 +43,11 @@ async function search(
     throw new Error(`Tavily search failed (${res.status}): ${await res.text()}`);
   }
   const data = (await res.json()) as { results?: TavilyResult[] };
-  return data.results ?? [];
+  const results = data.results ?? [];
+
+  if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value!);
+  cache.set(key, { at: Date.now(), results });
+  return results;
 }
 
 /** The same page often comes back as both "www.uscis.gov/x/" and "uscis.gov/x"; treat those as one. */
@@ -47,10 +65,11 @@ export async function searchOfficialSources(
   queries: string[],
   domains: string[],
   apiKey: string,
+  depth: SearchDepth,
   limit = 8,
 ): Promise<Source[]> {
   const batches = await Promise.all(
-    queries.map((q) => search(q, domains, apiKey)),
+    queries.map((q) => search(q, domains, apiKey, depth)),
   );
 
   const byUrl = new Map<string, TavilyResult>();

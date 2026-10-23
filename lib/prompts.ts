@@ -5,7 +5,7 @@ export const PLAN_SYSTEM = `You help international students in the United States
 Given a student's description of something they want to do:
 1. Restate the situation in one or two sentences.
 2. List the facts you must assume because the student did not say them (for example: that they are in F-1 status and not on OPT, that they are physically in the U.S. while doing the work, whether they are paid). Assume F-1 status unless the student says otherwise.
-3. Write 2 or 3 web search queries that will find the relevant rules on official U.S. government sources (USCIS, ICE / SEVP "Study in the States", 8 CFR 214.2(f) on eCFR, IRS). Every query must contain "F-1 student" so results are about student status, not other visa types. Make each query specific to the situation.
+3. Write 2 web search queries that will find the relevant rules on official U.S. government sources (USCIS, ICE / SEVP "Study in the States", 8 CFR 214.2(f) on eCFR, IRS). Every query must contain "F-1 student" so results are about student status, not other visa types. Make each query specific to the situation.
 
 Respond with JSON only, no other text:
 {"summary": string, "assumptions": string[], "queries": string[]}`;

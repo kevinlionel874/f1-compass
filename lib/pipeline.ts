@@ -68,7 +68,12 @@ export async function runCheck(
   const domains = input.schoolDomain
     ? [...OFFICIAL_DOMAINS, input.schoolDomain]
     : OFFICIAL_DOMAINS;
-  const sources = await searchOfficialSources(plan.queries, domains, config.tavilyApiKey);
+  const sources = await searchOfficialSources(
+    plan.queries,
+    domains,
+    config.tavilyApiKey,
+    config.searchDepth,
+  );
   send({ type: "sources", sources });
 
   send({ type: "status", step: "analyze", message: config.reasoningModel });
@@ -171,7 +176,6 @@ function backupPlan(question: string): Plan {
       "You are physically in the United States while doing the work.",
     ],
     queries: [
-      `F-1 student ${q}`,
       `F-1 student employment authorization rules ${q}`,
       "F-1 student on-campus and off-campus employment rules CPT OPT",
     ],
@@ -198,7 +202,8 @@ function strList(value: unknown, max: number): string[] {
 
 function toPlan(raw: unknown, question: string): Plan {
   const obj = (raw ?? {}) as Record<string, unknown>;
-  const queries = strList(obj.queries, 3);
+  // Two queries keep each check at 2-4 Tavily credits.
+  const queries = strList(obj.queries, 2);
   return {
     summary: str(obj.summary, question),
     assumptions: strList(obj.assumptions, 6),
