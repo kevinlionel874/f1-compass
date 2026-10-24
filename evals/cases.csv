@@ -1,11 +1,31 @@
 ﻿id,question,expected,source,notes
-1,Work 25 hours a week as a paid TA during the fall semester,not_allowed,,On-campus work is capped at 20 hours/week while school is in session
-2,Freelance web development for a client in China while I'm living in Illinois,not_allowed,,Where the work is done matters; the client's country does not
-3,Paid summer internship at a tech company off campus,needs_authorization,,Usually CPT
-4,Invest my own savings in U.S. stocks and ETFs,allowed,,Passive investment is not employment
-5,Accept a cash prize for winning an online hackathon,unclear,,Ask the DSO
-6,Work full time at the campus dining hall during winter break,allowed,,Full-time on-campus work is allowed during official school breaks
-7,Work for a U.S. startup in a job related to my major after my OPT EAD card is approved,allowed,,Must be related to the major
-8,Sell my used textbooks and furniture before moving out,allowed,,Selling personal belongings is not employment
-9,Drive for Uber on weekends,not_allowed,,Off-campus work without authorization
-10,我想在学校图书馆打工，每周 15 小时,allowed,,Chinese question; on campus and under 20 hours
+1,Work 18 hours a week at the campus bookstore during the fall semester,allowed,,On-campus work up to 20 hours a week during the session
+2,Work full time at the campus library during summer break; I'm enrolled again in the fall,allowed,,Full-time on-campus work is allowed during official breaks
+3,Work 15 hours at the campus cafeteria and 10 hours as an on-campus research assistant in the same week during the semester,not_allowed,,The 20-hour cap applies to all on-campus jobs combined
+4,"Paid summer internship at a tech company related to my major, after my first academic year",needs_authorization,,CPT
+5,Start an off-campus internship in my first semester as an undergraduate,not_allowed,,CPT generally requires one full academic year
+6,"Unpaid internship at a local nonprofit off campus during the semester, related to my major",needs_authorization,,Unpaid internships usually still need CPT (borderline)
+7,"Work full time at a U.S. company in my field after graduation, after my OPT EAD card arrives",allowed,,OPT employment related to the major
+8,Start working at a company after graduation before my OPT application is approved,not_allowed,,OPT work can't start before the EAD is issued and its start date
+9,"Work as a barista during my post-completion OPT, unrelated to my computer science degree",not_allowed,,OPT work must be directly related to the major
+10,Do paid freelance web development for a client in China while I'm living in Illinois during the semester,needs_authorization,,Work done in the U.S. counts; related to CS so OPT is a realistic path (borderline)
+11,Take paid logo design gigs on Fiverr while studying; my major is chemistry,not_allowed,,Unrelated to the major
+12,Build websites for paying clients in China while I'm physically in China during winter break,allowed,,Work physically outside the U.S. (borderline)
+13,Sell my used textbooks and furniture online before moving out,allowed,,Selling personal belongings is not employment
+14,"Run an Etsy shop selling jewelry I make, while studying in the U.S.",not_allowed,,Self-employment
+15,Earn royalties from a programming book I wrote before coming to the U.S.,unclear,,Official sources don't address it (borderline)
+16,Invest my savings in U.S. stocks and index funds,allowed,,Passive investment
+17,Buy cryptocurrency with my own money and hold it,allowed,,Passive investment
+18,Earn interest from a U.S. high-yield savings account,allowed,,Passive income
+19,Accept a merit scholarship from my university,allowed,,Not payment for services
+20,Accept cash prize money from winning an online hackathon,unclear,,Official sources don't address it (borderline)
+21,"Get paid a stipend as a graduate research assistant in my department, 20 hours a week during the semester",allowed,,On-campus employment within 20 hours
+22,Volunteer at a local food bank on weekends with no pay or benefits,allowed,,Genuine unpaid volunteering
+23,I'm a computer science student. Work unpaid as a developer for a for-profit startup in exchange for equity,needs_authorization,,Equity is compensation; related to the major so CPT/OPT is a realistic path
+24,"Do an unpaid ""trial week"" at a local restaurant before they decide to hire me",not_allowed,,Off-campus work unrelated to any major
+25,Do a paid internship in Shanghai during my summer break while I'm physically in China,allowed,,Work physically outside the U.S.
+26,I'm a biology major. Teach English online to students in Japan for money from my dorm room,not_allowed,,Work done in the U.S.; unrelated to the major
+27,Work at my parents' company in Vietnam while I'm back home for winter break,allowed,,Work physically outside the U.S.
+28,Drive for Uber on weekends,not_allowed,,Gig work unrelated to any major (borderline)
+29,Deliver food for DoorDash a few hours a week,not_allowed,,Gig work unrelated to any major
+30,Tutor a high school student in math for cash off campus,not_allowed,,Off-campus work without authorization

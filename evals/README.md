@@ -25,7 +25,7 @@ If a question contains a comma, wrap it in double quotes.
 - `source`：能证明这个结论的官方网页链接
 - 题目里如果有英文逗号，整句用英文双引号括起来
 
-前 10 条是示例，`source` 还空着，也请帮忙补上并核对结论。
+目前有 30 道题，`source` 还空着，也请帮忙补上并核对结论。
 
 ## Running
 
@@ -34,6 +34,6 @@ npm run dev      # in one terminal
 npm run eval     # in another
 ```
 
-Options: `EVAL_LIMIT=5` runs only the first 5 cases; `EVAL_CONCURRENCY=3` runs 3 at a time (default 2); `EVAL_URL` points at a deployed copy instead of localhost.
+Options: `EVAL_IDS=24,26,28` reruns only those cases (handy after a fix, and it saves search credits); `EVAL_LIMIT=5` runs only the first 5 cases; `EVAL_CONCURRENCY=3` runs 3 at a time (default 2); `EVAL_URL` points at a deployed copy instead of localhost.
 
 Results print to the terminal and are saved to `evals/results.md`. A **dangerous** error is one where the app says *likely allowed* but the expected answer is anything else: that is the mistake that could hurt a student, so the goal is zero.

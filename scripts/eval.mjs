@@ -1,12 +1,17 @@
 // Sends every question in evals/cases.csv to a running F1 Compass server and reports accuracy.
 // Start the app first (npm run dev), then: npm run eval
-// Options: EVAL_URL (default http://localhost:3000), EVAL_LIMIT, EVAL_CONCURRENCY (default 2)
+// Options: EVAL_URL (default http://localhost:3000), EVAL_LIMIT, EVAL_CONCURRENCY (default 2),
+//          EVAL_IDS (comma-separated case ids, e.g. "24,26,28", to rerun only those)
 
 import { readFile, writeFile } from "node:fs/promises";
 
 const BASE = (process.env.EVAL_URL || "http://localhost:3000").replace(/\/$/, "");
 const LIMIT = Number(process.env.EVAL_LIMIT) || Infinity;
 const CONCURRENCY = Number(process.env.EVAL_CONCURRENCY) || 2;
+const IDS = (process.env.EVAL_IDS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 // Plain words in the spreadsheet → verdict values the app returns.
 const EXPECTED = {
@@ -89,7 +94,7 @@ for (const c of all) {
   }
   cases.push(c);
 }
-const todo = cases.slice(0, LIMIT);
+const todo = (IDS.length ? cases.filter((c) => IDS.includes(c.id)) : cases).slice(0, LIMIT);
 console.log(`Running ${todo.length} case(s) against ${BASE}, ${CONCURRENCY} at a time…\n`);
 
 const results = new Array(todo.length);
