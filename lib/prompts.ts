@@ -57,11 +57,27 @@ Respond with JSON only, no other text:
   "caveat": string  // one sentence: confirm with the DSO before working remotely from abroad during the semester, and follow the home country's tax and labor rules
 }`;
 
+/**
+ * The sources and the restated question are in English, so a general "match the student's
+ * language" rule gets ignored for non-English questions. Naming the language at the end of the
+ * prompt works much better. Scripts we can't map fall back to the general rule.
+ */
+export function languageInstruction(question: string): string {
+  if (/[぀-ヿ]/.test(question)) return "Write every text field in Japanese.";
+  if (/[가-힯]/.test(question)) return "Write every text field in Korean.";
+  if (/[一-鿿]/.test(question)) {
+    return "Write every text field in Chinese, using the same script (simplified or traditional) as the student's question.";
+  }
+  return "Write every text field in the same language as the student's question.";
+}
+
 export function buildHomePrompt(question: string, country: string): string {
   return `Home country: ${country}
 
 What the student wants to do:
-${question}`;
+${question}
+
+Language: ${languageInstruction(question)}`;
 }
 
 export function buildAnalysisPrompt(
@@ -83,5 +99,7 @@ Assumptions so far:
 ${plan.assumptions.map((a) => `- ${a}`).join("\n") || "- none"}
 
 Sources:
-${sourceText}`;
+${sourceText}
+
+Language: ${languageInstruction(question)} Keep JSON keys and verdict values in English.`;
 }
