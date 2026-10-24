@@ -134,6 +134,16 @@ scripts/eval.mjs                runs the test questions and reports accuracy
 scripts/list-models.mjs         lists NVIDIA models available to your key
 ```
 
+## Team
+
+<img src="docs/team.jpg" alt="The three members of the F1 Compass team at our planning meeting" width="600">
+
+Built by three students for the Nebius x NVIDIA Global AI Hackathon:
+
+- [@kevinlionel874](https://github.com/kevinlionel874)
+- [@Gall1um](https://github.com/Gall1um)
+- [@winter-soldier25](https://github.com/winter-soldier25)
+
 ## License
 
 [MIT](LICENSE)
