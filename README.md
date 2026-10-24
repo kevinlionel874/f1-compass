@@ -50,7 +50,11 @@ Progress streams to the browser as each step finishes. When the answer arrives, 
 
 `evals/cases.csv` holds student questions with the answer F1 Compass should give and an official source for each. `npm run eval` runs them all against the app and counts **dangerous errors**: answering *likely allowed* when the right answer is anything else. That is the mistake that could hurt a student, so we tune for zero. See [evals/README.md](evals/README.md).
 
-On the first 10 questions, runs since we tightened the verdict rules on Oct 20 scored between 7/10 and 9/10, with **no dangerous errors**. Our very first run, before that change, had one: it called accepting a hackathon prize "likely allowed" when the official sources don't address prizes. The full set of 30 questions is being written now. _TODO: add final results._
+**Latest run, 30 questions across 10 categories: 25/30 correct (83%), 1 dangerous error.** Per-question results are in [evals/results.md](evals/results.md).
+
+- **Four of the five misses were too cautious:** working for clients in China while physically there during a break (answered "Unclear", key says "Allowed"), investing in stocks ("Unclear" vs "Allowed"; earlier runs got it right), volunteering at a food bank ("Unclear" vs "Allowed"), and running an Etsy shop ("Authorization needed" vs "Not allowed").
+- **The dangerous error:** royalties from a book written before coming to the U.S. It answered "Likely allowed", treating royalties as passive income. Official sources don't address royalties, so our answer key says "Unclear". We chose not to add a royalty-specific prompt rule just to pass this one question.
+- **Earlier history:** our very first run, on 10 questions, had one dangerous error too (a hackathon prize called "likely allowed"). Tightening the verdict rules on Oct 20 fixed that case, and a rule added on Oct 23 fixed three gig-work questions that teammates found answered "Authorization needed" instead of "Not allowed".
 
 ## Limitations and known issues
 
@@ -59,7 +63,8 @@ We think these are worth knowing before you rely on an answer:
 - **It is not legal advice.** F1 Compass explains general rules and points to sources. Immigration outcomes depend on details it cannot see. Every answer tells the student to confirm with their DSO.
 - **Answers can change between runs.** The verdict depends on which official pages the search returns, and those vary. Temperature 0 reduces the variation but does not remove it.
 - **"Authorization needed" and "Likely not allowed" can blur.** For example, driving for a rideshare app has been labeled both ways across runs. Both mean "don't do this without CPT or OPT", but the second is more accurate when no realistic authorization path exists.
-- **Thin sources lead to "Unclear".** Some activities, such as hackathon prizes or book royalties, are not addressed directly on official pages. By design the app answers "Unclear" instead of guessing.
+- **Thin sources should lead to "Unclear", but not always.** Some activities, such as hackathon prizes or book royalties, are not addressed directly on official pages, and the app is told to answer "Unclear" instead of guessing. It usually does; in our latest run it still called book royalties "likely allowed".
+- **It leans cautious.** Most misses answer "Unclear" when the rule is actually settled (for example volunteering, or investing your own money). That is safer than the opposite mistake, but less helpful.
 - **The model sometimes mentions Special Student Relief** even when the student gave no reason to think it applies, despite a prompt rule against it.
 - **Home-country suggestions are ideas, not job listings.** They come from the model, not from a job database. Platform names can be imprecise, and the app does not check the home country's labor or tax rules.
 - **F-1 only.** J-1, M-1 and detailed OPT questions (such as unemployment-day limits) are not covered well yet.
